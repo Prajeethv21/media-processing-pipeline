@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node server/index.js",
+    "build": "cd client && npm install && npm run build",
     "server": "node server/index.js",
     "client": "npm run dev --prefix client",
     "dev": "concurrently \"node server/index.js\" \"npm run dev --prefix client\"",
