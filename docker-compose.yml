@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  media-pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spectratrace-pipeline
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - NODE_ENV=production
+    volumes:
+      - ./server/uploads:/app/server/uploads
+      - ./server/data:/app/server/data
+    restart: unless-stopped
