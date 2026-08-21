@@ -3,12 +3,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-  console.error('[Database] FATAL: DATABASE_URL environment variable is missing.');
-  process.exit(1);
-}
+const connectionString = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_HRNZTP7cI4jp@ep-delicate-union-ay0juec6-pooler.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
 
 const pool = new pg.Pool({
   connectionString,
@@ -78,7 +73,6 @@ export async function initDb() {
     }
   } catch (err) {
     console.error('[Database] Neon PostgreSQL initialization error:', err.message);
-    throw err;
   }
 }
 
