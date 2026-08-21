@@ -13,6 +13,33 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
+// Sliding Window Rate Limiter Middleware (100 requests per 15 minutes per IP)
+const ipRateMap = new Map();
+const rateLimiter = (req, res, next) => {
+  const ip = req.ip || req.headers['x-forwarded-for'] || '127.0.0.1';
+  const now = Date.now();
+  const windowMs = 15 * 60 * 1000;
+  const maxRequests = 100;
+
+  if (!ipRateMap.has(ip)) {
+    ipRateMap.set(ip, []);
+  }
+
+  const timestamps = ipRateMap.get(ip).filter(ts => now - ts < windowMs);
+  if (timestamps.length >= maxRequests) {
+    return res.status(429).json({
+      error: 'Rate limit exceeded. Too many requests. Please try again later.',
+      retryAfterSeconds: Math.ceil((timestamps[0] + windowMs - now) / 1000)
+    });
+  }
+
+  timestamps.push(now);
+  ipRateMap.set(ip, timestamps);
+  next();
+};
+
+router.use(rateLimiter);
+
 const uploadDir = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
