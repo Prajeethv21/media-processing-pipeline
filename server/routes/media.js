@@ -92,6 +92,8 @@ router.post('/upload', (req, res) => {
       const filename = req.file.filename;
       const originalName = req.file.originalname;
       const mimeType = req.file.mimetype;
+      const size = req.file.size;
+      const filepath = req.file.path;
       const fileBuffer = fs.readFileSync(filepath);
       const url = `data:${mimeType};base64,${fileBuffer.toString('base64')}`;
 
