@@ -92,9 +92,8 @@ router.post('/upload', (req, res) => {
       const filename = req.file.filename;
       const originalName = req.file.originalname;
       const mimeType = req.file.mimetype;
-      const size = req.file.size;
-      const filepath = req.file.path;
-      const url = `/uploads/${filename}`;
+      const fileBuffer = fs.readFileSync(filepath);
+      const url = `data:${mimeType};base64,${fileBuffer.toString('base64')}`;
 
       await db.query(`
         INSERT INTO media_items (id, filename, original_name, mime_type, size, filepath, url, status, progress, created_at, updated_at)
@@ -102,6 +101,15 @@ router.post('/upload', (req, res) => {
       `, [mediaId, filename, originalName, mimeType, size, filepath, url]);
 
       const jobId = await queueManager.enqueue(mediaId);
+
+      // In serverless contexts (Vercel), execute queue processing immediately so runtime doesn't freeze background worker
+      if (process.env.VERCEL) {
+        try {
+          await queueManager.processNext();
+        } catch (procErr) {
+          console.error('[Vercel Serverless Processing Notice]:', procErr.message);
+        }
+      }
 
       res.status(202).json({
         success: true,

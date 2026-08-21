@@ -180,9 +180,19 @@ async function detectLicensePlate(imageBuffer) {
       .normalize()
       .toBuffer();
 
-    const worker = await Tesseract.createWorker('eng');
-    const { data: { text, confidence } } = await worker.recognize(processedBuffer);
-    await worker.terminate();
+    // Run OCR with a 5000ms safety timeout to prevent hanging on serverless execution
+    const runOcrWithTimeout = async () => {
+      const worker = await Tesseract.createWorker('eng');
+      const res = await worker.recognize(processedBuffer);
+      await worker.terminate();
+      return res;
+    };
+
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('OCR recognition timed out')), 5000)
+    );
+
+    const { data: { text, confidence } } = await Promise.race([runOcrWithTimeout(), timeoutPromise]);
 
     const cleanText = text.replace(/[^A-Z0-9\s]/gi, ' ').toUpperCase();
     const words = cleanText.split(/\s+/).filter(w => w.length >= 3);

@@ -85,11 +85,18 @@ class PersistentQueueManager {
 
       this.broadcast({ event: 'JOB_PROCESSING', jobId: job_id, mediaId: media_id, status: 'processing', progress: 25 });
 
-      if (!fs.existsSync(filepath)) {
-        throw new Error(`Media file not found at path: ${filepath}`);
+      let imageBuffer = null;
+      if (filepath && fs.existsSync(filepath)) {
+        imageBuffer = fs.readFileSync(filepath);
+      } else {
+        const mediaRes = await db.query('SELECT url FROM media_items WHERE id = $1', [media_id]);
+        const mediaUrl = mediaRes.rows[0]?.url;
+        if (mediaUrl && mediaUrl.startsWith('data:')) {
+          imageBuffer = Buffer.from(mediaUrl.split(',')[1], 'base64');
+        } else {
+          throw new Error(`Media file not found at path: ${filepath}`);
+        }
       }
-
-      const imageBuffer = fs.readFileSync(filepath);
 
       await db.query(`UPDATE media_items SET progress = 50 WHERE id = $1`, [media_id]);
       this.broadcast({ event: 'JOB_PROGRESS', jobId: job_id, mediaId: media_id, progress: 50 });
