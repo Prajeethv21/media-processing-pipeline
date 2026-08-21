@@ -22,6 +22,20 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Lazy DB Initialization Middleware (Guarantees Neon DB connectivity on Vercel serverless calls)
+let dbInitialized = false;
+app.use(async (req, res, next) => {
+  if (!dbInitialized) {
+    try {
+      await initDb();
+      dbInitialized = true;
+    } catch (e) {
+      console.error('[Database Init Warning]:', e.message);
+    }
+  }
+  next();
+});
+
 // Serve uploaded images statically
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -80,10 +94,9 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Async Server Startup Function
-async function startServer() {
-  try {
-    await initDb();
+// Start listening if not running inside Vercel serverless context
+if (!process.env.VERCEL) {
+  initDb().then(() => {
     app.listen(PORT, () => {
       console.log(`=======================================================`);
       console.log(`  SpectraTrace AI Pipeline Engine Server Ready`);
@@ -92,10 +105,9 @@ async function startServer() {
       console.log(`  Analytics   : http://localhost:${PORT}/api/v1/analytics/summary`);
       console.log(`=======================================================`);
     });
-  } catch (err) {
-    console.error('[Server Initialization Error]: Failed to start server:', err);
-    process.exit(1);
-  }
+  }).catch(err => {
+    console.error('[Server Startup Error]:', err);
+  });
 }
 
-startServer();
+export default app;
