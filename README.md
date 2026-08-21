@@ -199,4 +199,3 @@ curl http://localhost:5000/api/v1/media/failure/c4b912a7-584e-4e6f-b2b9-12345678
 - [x] Invalid file upload (.txt, .pdf) returns 400 Bad Request JSON response
 - [x] Empirical real vehicle specimen results (`Testimg.jpg`, `testimg1.jpg`, `TESTimg3.jpg`) documented in README
 - [x] Complete AI Usage Disclosure included in README
-- [x] Dockerfile & `docker-compose.yml` included
